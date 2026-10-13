@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Bank Konten Graphic Designer AGI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Plugin Datalabels -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Konfigurasi PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => console.log('Service Worker terdaftar!', reg))
+        .catch((err) => console.log('Gagal mendaftarkan Service Worker:', err));
+    });
+  }
+</script>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Login Admin Graphic Designer AGI</h2>
+                <p class="text-xs text-slate-400 mt-1">Masukkan kredensial akun administrator Anda</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nama / Username</label>
+                    <input type="text" id="loginUser" required placeholder="Contoh: Makmur Fahmi" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+                    <input type="password" id="loginPass" required placeholder="••••••" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div id="loginError" class="text-xs text-rose-500 font-medium hidden text-center"></div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition">
+                    Masuk Dashboard
+                </button>
+            </form>
+            <div class="mt-6 text-center text-xs text-slate-400">
+                Default Admin: <span class="font-semibold text-slate-600">Makmur Fahmi</span> | Password: <span class="font-semibold text-slate-600">300999</span>
+                <div class="mt-2">
+                    <button onclick="resetSystemData()" class="text-[11px] text-indigo-600 hover:underline"><i class="fa-solid fa-rotate-right"></i> Reset Akun & Data Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD WRAPPER -->
+    <div id="dashboardApp" class="hidden min-h-screen flex flex-col justify-between">
+        <div>
+            <!-- Header -->
+            <header class="bg-gradient-to-r from-indigo-700 to-blue-600 text-white shadow-md">
+                <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie"></i> Dashboard Bank Konten Graphic Designer AGI
+                        </h1>
+                        <p class="text-indigo-100 text-sm mt-1">Monitoring & Manajemen Aset Desain Grafis Terintegrasi Google Drive</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-indigo-800/50 px-4 py-2 rounded-xl backdrop-blur-sm border border-indigo-400/30 flex items-center gap-2">
+                            <i class="fa-solid fa-user-shield text-indigo-200 text-xs"></i>
+                            <span id="currentAdminName" class="text-xs font-semibold text-white">Makmur Fahmi</span>
+                        </div>
+                        <button onclick="openUserModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5" title="Tambah User">
+                            <i class="fa-solid fa-user-plus"></i> <span class="hidden sm:inline">Kelola User</span>
+                        </button>
+                        <button onclick="handleLogout()" class="bg-rose-500/80 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5" title="Logout">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Container -->
+            <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+
+                <!-- Action Toolbar -->
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-xs font-medium text-slate-600">Sistem & Google Drive Terhubung</span>
+                    </div>
+                    <button onclick="openAddModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i> Input Data Desain Baru
+                    </button>
+                </div>
+
+                <!-- KPI Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Konten</p>
+                            <h3 id="kpi-total" class="text-3xl font-extrabold text-slate-700 mt-2">0</h3>
+                            <span class="text-xs text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded mt-2 inline-block">Semua Kategori</span>
+                        </div>
+                        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Ukuran File</p>
+                            <h3 id="kpi-size" class="text-3xl font-extrabold text-slate-700 mt-2">0 MB</h3>
+                            <span class="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded mt-2 inline-block">Storage Asset</span>
+                        </div>
+                        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-hard-drive"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Status Selesai</p>
+                            <h3 id="kpi-done" class="text-3xl font-extrabold text-emerald-600 mt-2">0</h3>
+                            <span class="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded mt-2 inline-block">Selesai Dikerjakan</span>
+                        </div>
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dalam Pengerjaan (WIP)</p>
+                            <h3 id="kpi-wip" class="text-3xl font-extrabold text-amber-600 mt-2">0</h3>
+                            <span class="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded mt-2 inline-block">Sedang Berjalan</span>
+                        </div>
+                        <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 mb-1">Distribusi Jenis Konten</h3>
+                            <p class="text-xs text-slate-400 mb-4">Jumlah file berdasarkan tipe konten</p>
+                        </div>
+                        <div class="relative h-64 flex items-center justify-center">
+                            <canvas id="jenisKontenChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 mb-1">Format File Desain</h3>
+                            <p class="text-xs text-slate-400 mb-4">Proporsi format ekstensi (PSD, AI, JPG)</p>
+                        </div>
+                        <div class="relative h-64 flex items-center justify-center">
+                            <canvas id="formatFileChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 mb-1">Total Ukuran per Kategori (MB)</h3>
+                            <p class="text-xs text-slate-400 mb-4">Besar penyimpanan tiap jenis konten</p>
+                        </div>
+                        <div class="relative h-64 flex items-center justify-center">
+                            <canvas id="ukuranKontenChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table Section -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Daftar Bank Konten</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Daftar lengkap aset desain grafis AGI (Status dapat diubah langsung)</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-64">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-search text-xs"></i>
+                                </span>
+                                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari judul global..." class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table id="contentTable" class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50/75 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-100">
+                                    <th class="py-3.5 px-6 font-semibold">No</th>
+                                    
+                                    <!-- Header Filter ID Konten -->
+                                    <th class="py-3 px-4 font-semibold">
+                                        <div class="flex flex-col gap-1.5">
+                                            <span>ID Konten</span>
+                                            <select id="filterId" onchange="filterTable()" class="px-2 py-1 text-[11px] font-normal lowercase bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Semua ID</option>
+                                                <option value="MOC">MOC</option>
+                                                <option value="POS">POS</option>
+                                                <option value="BAG">BAG</option>
+                                                <option value="BAN">BAN</option>
+                                                <option value="ID">ID</option>
+                                                <option value="LAY">LAY</option>
+                                                <option value="PEN">PEN</option>
+                                                <option value="FLY">FLY</option>
+                                            </select>
+                                        </div>
+                                    </th>
+
+                                    <!-- Header Filter Jenis Konten -->
+                                    <th class="py-3 px-4 font-semibold">
+                                        <div class="flex flex-col gap-1.5">
+                                            <span>Jenis Konten</span>
+                                            <select id="filterJenis" onchange="filterTable()" class="px-2 py-1 text-[11px] font-normal lowercase bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Semua Jenis</option>
+                                                <option value="Mockup">Mockup</option>
+                                                <option value="Poster">Poster</option>
+                                                <option value="Bagan">Bagan</option>
+                                                <option value="Banner">Banner</option>
+                                                <option value="ID Card">ID Card</option>
+                                                <option value="Layout">Layout</option>
+                                                <option value="Pengumuman">Pengumuman</option>
+                                                <option value="Flyer">Flyer</option>
+                                            </select>
+                                        </div>
+                                    </th>
+
+                                    <th class="py-3.5 px-6 font-semibold">Judul Konten</th>
+
+                                    <!-- Header Filter Format -->
+                                    <th class="py-3 px-4 font-semibold">
+                                        <div class="flex flex-col gap-1.5">
+                                            <span>Format</span>
+                                            <select id="filterFormat" onchange="filterTable()" class="px-2 py-1 text-[11px] font-normal lowercase bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Semua Format</option>
+                                                <option value="PSD">PSD</option>
+                                                <option value="AI">AI</option>
+                                                <option value="JPG">JPG</option>
+                                                <option value="PNG">PNG</option>
+                                            </select>
+                                        </div>
+                                    </th>
+
+                                    <th class="py-3.5 px-6 font-semibold">Ukuran (MB)</th>
+
+                                    <!-- Header Filter Status -->
+                                    <th class="py-3 px-4 font-semibold">
+                                        <div class="flex flex-col gap-1.5">
+                                            <span>Status (Editable)</span>
+                                            <select id="filterStatus" onchange="filterTable()" class="px-2 py-1 text-[11px] font-normal lowercase bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Semua Status</option>
+                                                <option value="Selesai">Selesai</option>
+                                                <option value="WIP">WIP</option>
+                                                <option value="Revisi">Revisi</option>
+                                            </select>
+                                        </div>
+                                    </th>
+
+                                    <th class="py-3.5 px-6 font-semibold">Source File (Drive)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <!-- Data dimuat via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-12 bg-white">
+            &copy; 2026 Graphic Designer AGI &bull; Dashboard Manajemen Aset Terpadu Google Drive
+        </footer>
+    </div>
+
+    <!-- MODAL INPUT DESAIN BARU -->
+    <div id="addModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg mx-4 border border-slate-100">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">Input Data Desain Baru</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Otomatisasi ID & Distribusi Sub-folder Google Drive</p>
+                </div>
+                <button onclick="closeAddModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAddNewContent(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Jenis Konten</label>
+                        <select id="newJenis" onchange="autoGenerateID()" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Mockup">Mockup (MOC-)</option>
+                            <option value="Poster">Poster (POS-)</option>
+                            <option value="Bagan">Bagan (BAG-)</option>
+                            <option value="Banner">Banner (BAN-)</option>
+                            <option value="ID Card">ID Card (ID -)</option>
+                            <option value="Layout">Layout (LAY-)</option>
+                            <option value="Pengumuman">Pengumuman (PEN-)</option>
+                            <option value="Flyer">Flyer (FLY-)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">ID Konten (Otomatis)</label>
+                        <input type="text" id="newId" readonly class="w-full px-3 py-2.5 text-sm bg-slate-100 font-mono font-bold text-indigo-600 border border-slate-200 rounded-xl cursor-not-allowed">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Judul Konten</label>
+                    <input type="text" id="newJudul" required placeholder="Nama / Judul Desain" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Format File</label>
+                        <select id="newFormat" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="PSD">PSD</option>
+                            <option value="AI">AI</option>
+                            <option value="JPG">JPG</option>
+                            <option value="PNG">PNG</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Ukuran (MB)</label>
+                        <input type="number" id="newUkuran" required min="1" placeholder="25" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Status</label>
+                        <select id="newStatus" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Selesai">Selesai</option>
+                            <option value="WIP">WIP</option>
+                            <option value="Revisi">Revisi</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Pilih File Desain Lokal</label>
+                    <input type="file" id="fileInput" onchange="handleFileSelect(event)" required class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl bg-slate-50">
+                    <p id="targetFolderInfo" class="text-[11px] text-indigo-600 mt-1 font-medium italic"><i class="fa-solid fa-folder-tree"></i> File akan terikat ke folder Google Drive: <span id="folderNameText">Mockup</span></p>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Batal</button>
+                    <button type="submit" id="submitBtn" class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data & Hubungkan Drive
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PREVIEW & DOWNLOAD FILE -->
+    <div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-lg mx-4 border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 id="previewTitle" class="text-lg font-bold text-slate-800">Preview Desain</h3>
+                    <p id="previewSubtitle" class="text-xs text-slate-400">Detail Master File & Download</p>
+                </div>
+                <button onclick="closePreviewModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center mb-6 min-h-[200px] flex flex-col items-center justify-center">
+                <img id="previewImage" src="" alt="Thumbnail Desain" class="max-h-56 max-w-full rounded-lg shadow-sm hidden object-contain">
+                <div id="previewPlaceholder" class="text-slate-400 space-y-2">
+                    <i class="fa-solid fa-file-image text-5xl text-indigo-300"></i>
+                    <p class="text-xs italic">File format PSD/AI tidak dapat menampilkan gambar langsung. Silakan unduh atau akses file master di Google Drive.</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <a id="downloadBtn" href="#" target="_blank" download class="px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> Unduh File Lokal
+                </a>
+                <a id="driveMasterBtn" href="#" target="_blank" class="px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-google-drive"></i> Buka Sub-folder Google Drive
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KELOLA USER -->
+    <div id="userModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 border border-slate-100">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">Manajemen Pengguna</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Tambah admin atau user baru</p>
+                </div>
+                <button onclick="closeUserModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAddNewUser(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nama User / Admin</label>
+                    <input type="text" id="newUsername" required placeholder="Nama lengkap" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+                    <input type="password" id="newUserPass" required placeholder="••••••" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div id="userSuccessMsg" class="text-xs text-emerald-600 font-medium hidden text-center">User berhasil ditambahkan!</div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeUserModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Tutup</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition">Tambah User</button>
+                </div>
+            </form>
+            <div class="mt-6 border-t border-slate-100 pt-4">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Daftar Admin Aktif:</p>
+                <div id="userListContainer" class="space-y-1.5 max-h-32 overflow-y-auto text-xs text-slate-600">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIKA DASHBOARD -->
+    <script>
+        const prefixMap = {
+            "Mockup": "MOC-",
+            "Poster": "POS-",
+            "Bagan": "BAG-",
+            "Banner": "BAN-",
+            "ID Card": "ID -",
+            "Layout": "LAY-",
+            "Pengumuman": "PEN-",
+            "Flyer": "FLY-"
+        };
+
+        const subFolderDriveUrls = {
+            "Bagan": "https://drive.google.com/drive/folders/1AT6P-aG1TQgoCgFItt7lJd5eC6YlR4U5",
+            "Banner": "https://drive.google.com/drive/folders/1l6kWIW5Un1NdD6G5FEdo1YqeSYTCu6BE",
+            "Flyer": "https://drive.google.com/drive/folders/18DjoW86wpj6XJhOWTc7yh6tn3YVLUGZB",
+            "ID Card": "https://drive.google.com/drive/folders/1qRPSTbtgBsDxj_COWUoiIxFLoNgURO3-",
+            "Layout": "https://drive.google.com/drive/folders/1Zi21aCHAje_dzzawn5xOr_xiMXjqD1QF",
+            "Mockup": "https://drive.google.com/drive/folders/19ttS4kdsPXZOIgPMvWq6DPetlj63MHi8",
+            "Pengumuman": "https://drive.google.com/drive/folders/1UxZqW-iHUywMQf7GSGmjUTuZ7Hu_vRsz",
+            "Poster": "https://drive.google.com/drive/folders/10uGQyqhwookQ57JtVdRDmO6jVB_8BPKJ"
+        };
+
+        const defaultAdminUsers = [{ name: "Makmur Fahmi", pass: "300999" }];
+        let usersDB = JSON.parse(localStorage.getItem('agi_users')) || defaultAdminUsers;
+
+        function resetSystemData() {
+            localStorage.clear();
+            alert("Sistem berhasil di-reset ke data default! Silakan login kembali dengan Makmur Fahmi / 300999.");
+            location.reload();
+        }
+
+        let defaultData = [
+            {no: 1, id: "MOC-001", jenis: "Mockup", judul: "Kaos Panitia HUT RI ke-81", format: "PSD", ukuran: 31, status: "Selesai", source: "Mock Up Desain Kaos 17-an.psd"},
+            {no: 2, id: "POS-001", jenis: "Poster", judul: "Lomba Karaoke HUT RI ke-81", format: "PSD", ukuran: 59, status: "Selesai", source: "Desain Lomba Karaoke.psd"},
+            {no: 3, id: "BAN-001", jenis: "Banner", judul: "Backdrop Panggung HUT RI ke-81", format: "PSD", ukuran: 23, status: "Selesai", source: "Backdrop Panggung.psd"},
+            {no: 4, id: "BAG-001", jenis: "Bagan", judul: "Lomba HUT RI ke-81", format: "AI", ukuran: 2, status: "Selesai", source: "Desain Bagan Lomba.ai"},
+            {no: 5, id: "POS-002", jenis: "Poster", judul: "Lomba Regu & Individu HUT RI ke-81", format: "PSD", ukuran: 81, status: "Selesai", source: "Poster Lomba 17 Agustus.psd"},
+            {no: 6, id: "ID -001", jenis: "ID Card", judul: "ID Card Visitor", format: "PSD", ukuran: 8, status: "Selesai", source: "ID Card Visitor.psd"},
+            {no: 7, id: "LAY-001", jenis: "Layout", judul: "Apel Kemerdekaan HUT RI ke-81", format: "AI", ukuran: 1, status: "Selesai", source: "Layout Apel Kemerdekaan Akarsa.ai"},
+            {no: 8, id: "LAY-002", jenis: "Layout", judul: "Layout Lomba Kemerdekaan", format: "AI", ukuran: 1, status: "Selesai", source: "Layout Lomba Kemerdekaan Akarsa.ai"},
+            {no: 9, id: "PEN-001", jenis: "Pengumuman", judul: "Notice Harap Tenang", format: "PSD", ukuran: 38, status: "Selesai", source: "Notice Harap Tenang.psd"},
+            {no: 10, id: "BAN-002", jenis: "Banner", judul: "Motto dan Visi Misi Akarsa", format: "JPG", ukuran: 4, status: "Selesai", source: "Motto.jpg"},
+            {no: 11, id: "FLY-001", jenis: "Flyer", judul: "Hari Olahraga Nasional", format: "PSD", ukuran: 26, status: "Selesai", source: "Haornas 2026.psd"},
+            {no: 12, id: "FLY-002", jenis: "Flyer", judul: "Hari Palang Merah Indonesia", format: "PSD", ukuran: 15, status: "Selesai", source: "Hari PMI.psd"},
+            {no: 13, id: "MOC-002", jenis: "Mockup", judul: "Seragam AHB Group", format: "PSD", ukuran: 153, status: "WIP", source: "Seragam AHB Group.psd"},
+            {no: 14, id: "MOC-003", jenis: "Mockup", judul: "Baju Anak (Sales)", format: "PSD", ukuran: 27, status: "Selesai", source: "Baju Anak.psd"},
+            {no: 15, id: "MOC-004", jenis: "Mockup", judul: "Celana Pramuka (Sales)", format: "PSD", ukuran: 5, status: "Selesai", source: "Celana Pramuka.psd"},
+            {no: 16, id: "MOC-005", jenis: "Mockup", judul: "Rompi Blue Inpire (Sales)", format: "PSD", ukuran: 21, status: "Selesai", source: "Rompi Blue Inspire.psd"},
+            {no: 17, id: "MOC-006", jenis: "Mockup", judul: "Tshirt Blue Inspire (Sales)", format: "PSD", ukuran: 7, status: "Selesai", source: "Tshirt Blue Inspire.psd"},
+            {no: 18, id: "MOC-007", jenis: "Mockup", judul: "Topi Trucker Blue Inspire (Sales)", format: "PSD", ukuran: 53, status: "Selesai", source: "Topi Trucker Blue Inspire.psd"},
+            {no: 19, id: "MOC-008", jenis: "Mockup", judul: "Jaket Jurusan UGM (Sales)", format: "PSD", ukuran: 24, status: "Selesai", source: "Jaket_UGM.psd"},
+            {no: 20, id: "MOC-009", jenis: "Mockup", judul: "Kaos Olahraga SMP (Sales)", format: "PSD", ukuran: 93, status: "Selesai", source: "Kaos_SMP.psd"},
+            {no: 21, id: "MOC-010", jenis: "Mockup", judul: "Seragam SMP (Sales)", format: "PSD", ukuran: 34, status: "Selesai", source: "Seragam_SMP.psd"},
+            {no: 22, id: "MOC-011", jenis: "Mockup", judul: "Kaos Puji Cell (Sales)", format: "PSD", ukuran: 25, status: "Selesai", source: "Kaos_Puji.psd"},
+            {no: 23, id: "MOC-012", jenis: "Mockup", judul: "Kaos Hadiah Lomba HUT RI ke-81", format: "PSD", ukuran: 65, status: "Selesai", source: "Kaos_Hadiah.psd"},
+            {no: 24, id: "MOC-013", jenis: "Mockup", judul: "Seragam Kerja Taktikal Depan", format: "PSD", ukuran: 118, status: "Selesai", source: "Seragam_Taktikal_Depan.psd"},
+            {no: 25, id: "MOC-014", jenis: "Mockup", judul: "Seragam Kerja Taktikal Belakang", format: "PSD", ukuran: 124, status: "Selesai", source: "Seragam_Taktikal_Belakang.psd"},
+            {no: 26, id: "PEN-002", jenis: "Pengumuman", judul: "Pengumuman HUT RI ke-81", format: "PSD", ukuran: 30, status: "Selesai", source: "Pengumuman_HUT.psd"},
+            {no: 27, id: "POS-003", jenis: "Poster", judul: "Poster HR Rekrutmen", format: "PSD", ukuran: 35, status: "Selesai", source: "Poster_HR.psd"},
+            {no: 28, id: "BAG-002", jenis: "Bagan", judul: "Struktur Organisasi WKT", format: "PSD", ukuran: 25, status: "Selesai", source: "Struktur_WKT.psd"},
+            {no: 29, id: "BAG-003", jenis: "Bagan", judul: "Struktur AGI Group", format: "PSD", ukuran: 108, status: "Selesai", source: "Struktur_AGI.psd"},
+            {no: 30, id: "MOC-015", jenis: "Mockup", judul: "Rompi DLH Kota Semarang (Sales)", format: "PSD", ukuran: 46, status: "Selesai", source: "Rompi_DLH.psd"},
+            {no: 31, id: "MOC-016", jenis: "Mockup", judul: "Track Pants Wanita (Sales)", format: "PSD", ukuran: 22, status: "Selesai", source: "Track_Pants.psd"},
+            {no: 32, id: "MOC-017", jenis: "Mockup", judul: "Wearpack (sales)", format: "JPG", ukuran: 4, status: "Selesai", source: "Wearpack.jpg"},
+            {no: 33, id: "MOC-018", jenis: "Mockup", judul: "Piyama (sales)", format: "PSD", ukuran: 5, status: "Selesai", source: "Piyama.psd"},
+            {no: 34, id: "MOC-019", jenis: "Mockup", judul: "Setelan seragam SD", format: "PSD", ukuran: 196, status: "Selesai", source: "Seragam_SD.psd"},
+            {no: 35, id: "FLY-003", jenis: "Flyer", judul: "memperingati peristiwa G30S", format: "PSD", ukuran: 262, status: "Selesai", source: "G30S.psd"},
+            {no: 36, id: "FLY-004", jenis: "Flyer", judul: "kesaktian Pancasila", format: "PSD", ukuran: 14, status: "Selesai", source: "Pancasila.psd"},
+            {no: 37, id: "FLY-005", jenis: "Flyer", judul: "HUT TNI", format: "PSD", ukuran: 154, status: "Selesai", source: "HUT_TNI.psd"},
+            {no: 38, id: "POS-004", jenis: "Poster", judul: "Poster HR Rekrutmen (Mekanik Garment)", format: "JPG", ukuran: 1, status: "Selesai", source: "Mekanik.jpg"},
+            {no: 39, id: "LAY-003", jenis: "Layout", judul: "layout Simulasi Kebakaran", format: "PSD", ukuran: 45, status: "WIP", source: "Simulasi_Kebakaran.psd"},
+            {no: 40, id: "MOC-020", jenis: "Mockup", judul: "Wearpack GWDC (sales)", format: "JPG", ukuran: 2, status: "Selesai", source: "Wearpack_GWDC.jpg"},
+            {no: 41, id: "BAG-004", jenis: "Bagan", judul: "Revisi Struktur PT SAG", format: "PSD", ukuran: 127, status: "Selesai", source: "Struktur_SAG.psd"},
+            {no: 42, id: "BAN-003", jenis: "Banner", judul: "Dilarang Merokok di area gate 4 & 5", format: "PSD", ukuran: 59, status: "Selesai", source: "Dilarang_Merokok.psd"}
+        ];
+
+        let rawData = JSON.parse(localStorage.getItem('agi_content')) || defaultData;
+        let selectedFileObject = null;
+
+        let jenisKontenChartInstance = null;
+        let formatFileChartInstance = null;
+        let ukuranKontenChartInstance = null;
+
+        function autoGenerateID() {
+            const jenis = document.getElementById('newJenis').value;
+            const prefix = prefixMap[jenis] || "CNT-";
+            document.getElementById('folderNameText').innerText = jenis;
+
+            let maxNum = 0;
+            rawData.forEach(item => {
+                if (item.jenis === jenis) {
+                    const cleanId = item.id.replace(/[^0-9]/g, '');
+                    const num = parseInt(cleanId, 10);
+                    if (!isNaN(num) && num > maxNum) {
+                        maxNum = num;
+                    }
+                }
+            });
+
+            const nextNum = String(maxNum + 1).padStart(3, '0');
+            document.getElementById('newId').value = `${prefix}${nextNum}`;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const uInput = document.getElementById('loginUser').value.trim();
+            const pInput = document.getElementById('loginPass').value.trim();
+            const errEl = document.getElementById('loginError');
+
+            const currentUsers = JSON.parse(localStorage.getItem('agi_users')) || defaultAdminUsers;
+
+            const found = currentUsers.find(u => 
+                u.name.trim().toLowerCase() === uInput.toLowerCase() && 
+                u.pass.trim() === pInput
+            );
+
+            if (found) {
+                localStorage.setItem('agi_logged_user', found.name);
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardApp').classList.remove('hidden');
+                document.getElementById('currentAdminName').innerText = found.name;
+                initDashboard(rawData);
+            } else {
+                errEl.innerText = "Nama atau password salah! (Gunakan Makmur Fahmi / 300999)";
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('agi_logged_user');
+            location.reload();
+        }
+
+        window.onload = function() {
+            const logged = localStorage.getItem('agi_logged_user');
+            if (logged) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardApp').classList.remove('hidden');
+                document.getElementById('currentAdminName').innerText = logged;
+                initDashboard(rawData);
+            }
+        };
+
+        function openAddModal() { 
+            document.getElementById('addModal').classList.remove('hidden'); 
+            autoGenerateID();
+        }
+        function closeAddModal() { document.getElementById('addModal').classList.add('hidden'); }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                selectedFileObject = e.target.files[0];
+                const sizeInMB = Math.round(selectedFileObject.size / (1024 * 1024));
+                if (sizeInMB > 0) {
+                    document.getElementById('newUkuran').value = sizeInMB;
+                }
+            }
+        }
+
+        function handleAddNewContent(e) {
+            e.preventDefault();
+            const jenis = document.getElementById('newJenis').value;
+            const fileObj = selectedFileObject;
+            const fileName = fileObj ? fileObj.name : "file_desain";
+
+            const newItem = {
+                no: rawData.length + 1,
+                id: document.getElementById('newId').value,
+                jenis: jenis,
+                judul: document.getElementById('newJudul').value.trim(),
+                format: document.getElementById('newFormat').value,
+                ukuran: Number(document.getElementById('newUkuran').value),
+                status: document.getElementById('newStatus').value,
+                source: fileName,
+                fileDataUrl: fileObj && fileObj.type.startsWith('image/') ? URL.createObjectURL(fileObj) : null
+            };
+
+            rawData.push(newItem);
+            localStorage.setItem('agi_content', JSON.stringify(rawData));
+            initDashboard(rawData);
+            closeAddModal();
+            e.target.reset();
+            selectedFileObject = null;
+        }
+
+        function updateItemStatus(index, newStatus) {
+            rawData[index].status = newStatus;
+            localStorage.setItem('agi_content', JSON.stringify(rawData));
+            initDashboard(rawData);
+        }
+
+        function openPreviewModal(index) {
+            const item = rawData[index];
+            document.getElementById('previewTitle').innerText = item.judul;
+            document.getElementById('previewSubtitle').innerText = `${item.id} • ${item.jenis} (${item.format})`;
+            
+            const imgEl = document.getElementById('previewImage');
+            const placeholderEl = document.getElementById('previewPlaceholder');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const driveMasterBtn = document.getElementById('driveMasterBtn');
+
+            if (item.fileDataUrl) {
+                imgEl.src = item.fileDataUrl;
+                imgEl.classList.remove('hidden');
+                placeholderEl.classList.add('hidden');
+                downloadBtn.href = item.fileDataUrl;
+            } else {
+                imgEl.classList.add('hidden');
+                placeholderEl.classList.remove('hidden');
+                downloadBtn.href = subFolderDriveUrls[item.jenis] || "#";
+            }
+
+            driveMasterBtn.href = subFolderDriveUrls[item.jenis] || "#";
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.add('hidden');
+        }
+
+        function openUserModal() {
+            renderUserList();
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+        function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
+
+        function renderUserList() {
+            const container = document.getElementById('userListContainer');
+            container.innerHTML = '';
+            usersDB.forEach(u => {
+                container.innerHTML += `<div class="flex justify-between items-center bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                    <span class="font-medium text-slate-700">${u.name}</span>
+                    <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Admin</span>
+                </div>`;
+            });
+        }
+
+        function handleAddNewUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('newUsername').value.trim();
+            const pass = document.getElementById('newUserPass').value.trim();
+
+            if(usersDB.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+                alert("User sudah terdaftar!");
+                return;
+            }
+
+            usersDB.push({ name, pass });
+            localStorage.setItem('agi_users', JSON.stringify(usersDB));
+            renderUserList();
+            
+            const msg = document.getElementById('userSuccessMsg');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 3000);
+            e.target.reset();
+        }
+
+        function initDashboard(data) {
+            const totalKonten = data.length;
+            const totalUkuran = data.reduce((acc, curr) => acc + (Number(curr.ukuran) || 0), 0);
+            const totalSelesai = data.filter(item => item.status && item.status.trim().toLowerCase() === 'selesai').length;
+            const totalWip = data.filter(item => item.status && item.status.trim().toLowerCase() === 'wip').length;
+
+            document.getElementById('kpi-total').innerText = totalKonten;
+            document.getElementById('kpi-size').innerText = totalUkuran.toLocaleString() + ' MB';
+            document.getElementById('kpi-done').innerText = totalSelesai;
+            document.getElementById('kpi-wip').innerText = totalWip;
+
+            renderTable(data);
+            renderCharts(data);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            data.forEach((item) => {
+                const originalIndex = rawData.findIndex(d => d.id === item.id && d.judul === item.judul);
+
+                let selectBg = 'bg-slate-50 text-slate-700 border-slate-200';
+                if (item.status === 'Selesai') {
+                    selectBg = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold';
+                } else if (item.status === 'WIP') {
+                    selectBg = 'bg-amber-50 text-amber-700 border-amber-200 font-semibold';
+                } else if (item.status === 'Revisi') {
+                    selectBg = 'bg-rose-50 text-rose-700 border-rose-200 font-semibold';
+                }
+
+                const row = `
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="py-3 px-6 text-slate-500">${item.no}</td>
+                        <td class="py-3 px-4 font-mono font-medium text-indigo-600">${item.id}</td>
+                        <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-semibold">${item.jenis}</span></td>
+                        <td class="py-3 px-6 font-medium text-slate-800">${item.judul}</td>
+                        <td class="py-3 px-4"><span class="font-bold text-xs text-slate-600">${item.format}</span></td>
+                        <td class="py-3 px-6 text-slate-600">${item.ukuran} MB</td>
+                        <td class="py-3 px-4">
+                            <select onchange="updateItemStatus(${originalIndex}, this.value)" class="px-2.5 py-1.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer ${selectBg}">
+                                <option value="Selesai" ${item.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                                <option value="WIP" ${item.status === 'WIP' ? 'selected' : ''}>WIP</option>
+                                <option value="Revisi" ${item.status === 'Revisi' ? 'selected' : ''}>Revisi</option>
+                            </select>
+                        </td>
+                        <td class="py-3 px-6">
+                            <button onclick="openPreviewModal(${originalIndex})" class="text-indigo-600 hover:text-indigo-800 font-medium text-xs flex items-center gap-1.5 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg">
+                                <i class="fa-brands fa-google-drive"></i> ${item.source}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function renderCharts(data) {
+            const jenisCounts = {};
+            const jenisSizes = {};
+            const formatCounts = {};
+
+            data.forEach(item => {
+                const j = item.jenis || 'Lainnya';
+                jenisCounts[j] = (jenisCounts[j] || 0) + 1;
+                jenisSizes[j] = (jenisSizes[j] || 0) + (Number(item.ukuran) || 0);
+
+                const f = item.format || 'Lainnya';
+                formatCounts[f] = (formatCounts[f] || 0) + 1;
+            });
+
+            // Chart 1: Distribusi Jenis Konten (Doughnut)
+            const ctx1 = document.getElementById('jenisKontenChart').getContext('2d');
+            if (jenisKontenChartInstance) jenisKontenChartInstance.destroy();
+            jenisKontenChartInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(jenisCounts),
+                    datasets: [{
+                        data: Object.values(jenisCounts),
+                        backgroundColor: ['#6366f1', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        datalabels: {
+                            color: '#ffffff',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value) => value > 0 ? value : ''
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Chart 2: Format File Desain (Pie)
+            const ctx2 = document.getElementById('formatFileChart').getContext('2d');
+            if (formatFileChartInstance) formatFileChartInstance.destroy();
+            formatFileChartInstance = new Chart(ctx2, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(formatCounts),
+                    datasets: [{
+                        data: Object.values(formatCounts),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f97316', '#a855f7']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        datalabels: {
+                            color: '#ffffff',
+                            font: { weight: 'bold', size: 12 },
+                            formatter: (value) => value > 0 ? value : ''
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Chart 3: Total Ukuran per Kategori (Bar)
+            const ctx3 = document.getElementById('ukuranKontenChart').getContext('2d');
+            if (ukuranKontenChartInstance) ukuranKontenChartInstance.destroy();
+            ukuranKontenChartInstance = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(jenisSizes),
+                    datasets: [{
+                        label: 'Ukuran (MB)',
+                        data: Object.values(jenisSizes),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#475569',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (value) => value + ' MB'
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        function filterTable() {
+            const globalSearch = document.getElementById('searchInput').value.toLowerCase();
+            const fId = document.getElementById('filterId').value.toUpperCase();
+            const fJenis = document.getElementById('filterJenis').value;
+            const fFormat = document.getElementById('filterFormat').value;
+            const fStatus = document.getElementById('filterStatus').value;
+
+            const filtered = rawData.filter(item => {
+                const matchGlobal = item.judul.toLowerCase().includes(globalSearch) || 
+                                    item.id.toLowerCase().includes(globalSearch) || 
+                                    item.jenis.toLowerCase().includes(globalSearch) ||
+                                    item.format.toLowerCase().includes(globalSearch);
+
+                const matchId = fId === "" || item.id.toUpperCase().startsWith(fId);
+                const matchJenis = fJenis === "" || item.jenis === fJenis;
+                const matchFormat = fFormat === "" || item.format === fFormat;
+                const matchStatus = fStatus === "" || item.status === fStatus;
+
+                return matchGlobal && matchId && matchJenis && matchFormat && matchStatus;
+            });
+
+            renderTable(filtered);
+        }
+    </script>
+</body>
+</html>
